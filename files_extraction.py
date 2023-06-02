@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def Read_data(filename):
-    csv_f = pd.read_csv(filename, delimiter=';', low_memory=False)
-    # csv_f = csv_f.drop(labels="LABEL", axis=1)
+    csv_f = pd.read_csv(filename, low_memory=False) #, delimiter=';'
+    csv_f = csv_f.drop(labels="LABEL", axis=1)
     csv_f = csv_f.drop(index=range(3), axis=0)
     csv_f = csv_f.astype(float)
 
@@ -121,7 +121,7 @@ def Distrib_direction_hist(filename, ax=None):
     for bar, occurrence, bin_edge in zip(bars[0], occurrences, bin_edges[:-1]):
         height = bar
         angle = np.deg2rad(bin_edge)
-        ax.text(angle, height, occurrence, ha='center', va='bottom')
+        ax.text(angle, height, occurrence, ha='center', va='bottom', fontsize=14, color='red')
 
     ax.set_yticklabels([])
 
