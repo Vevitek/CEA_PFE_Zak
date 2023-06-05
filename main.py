@@ -2,13 +2,10 @@ import matplotlib.pyplot as plt
 from files_extraction import *
 
 
-# filename = "S:\Image_processing\Data\SiO2_track"
-# filename = 'S:\Image_processing\Data\example_tracking'
+filename = r'S:\Image_processing\Vagisha Analysis\Vagisha_SNP\One_percent_total time_index.csv'
 
-filename = r'S:\Image_processing\Vagisha Analysis\01062023\0%[H2O2]-entire track - track index.csv'
-
-pathfile = r'S:\Image_processing\Vagisha Analysis\01062023'
-name_file = r'\0%[H2O2]-entire track'
+pathfile = r'S:\Image_processing\Vagisha Analysis\Vagisha_SNP'
+name_file = r'\One_percent_SNP'
 
 Rep_traj_unchanged(filename)
 plt.savefig(pathfile+name_file+'_traj_unchanged.png')
@@ -17,6 +14,8 @@ plt.savefig(pathfile+name_file+'_same_origin.png')
 Distrib_direction_hist(filename)
 plt.savefig(pathfile+name_file+'_hist.png')
 
+# Analyse_diff_rate(filename)
+# MSD_diff_rate(filename)
 
 plt.show()
 

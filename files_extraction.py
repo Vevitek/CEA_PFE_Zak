@@ -162,6 +162,74 @@ def Mean_Square_Displacement(filename, deltaT=1, ax=None):
     ax.set_xlabel('Time')
     ax.set_ylabel('Mean Square Displacement')
 
+
+
+def Analyse_diff_rate(filename):
+    df = Read_data(filename)
+
+    # Calcul des déplacements
+    df['dx'] = df['POSITION_X'].diff()
+    df['dy'] = df['POSITION_Y'].diff()
+
+    # Calcul de la distance moyenne au carré
+    df['distance_carre'] = df['dx'] ** 2 + df['dy'] ** 2
+
+    # Calcul du temps moyen au carré
+    df['POSITION_T'] = pd.to_datetime(df['POSITION_T'])
+    df['temps_carre'] = (df['POSITION_T'] - df['POSITION_T'].min()).dt.total_seconds() ** 2
+
+    # Calcul de la distance moyenne au carré en fonction du temps moyen au carré
+    plt.plot(df['temps_carre'], df['distance_carre'], 'b.')
+    plt.xlabel('Temps moyen au carré')
+    plt.ylabel('Distance moyenne au carré')
+    plt.title('Analyse de mouvement brownien')
+    plt.show()
+
+    # Calcul de la pente (coefficient de diffusion)
+    pente = np.polyfit(df['temps_carre'], df['distance_carre'], 1)[0]
+    coefficient_diffusion = pente / 4
+
+    print('Coefficient de diffusion estimé:', coefficient_diffusion)
+
+def MSD_diff_rate(filename):
+    df = Read_data(filename)
+
+    # Calcul des déplacements
+    df['dx'] = df['POSITION_X'].diff()
+    df['dy'] = df['POSITION_Y'].diff()
+
+    # Calcul du Mean Squared Displacement (MSD)
+    df['distance_carre'] = df['dx'] ** 2 + df['dy'] ** 2
+    df['POSITION_T'] = pd.to_datetime(df['POSITION_T'])
+    df['temps_cumulatif'] = (df['POSITION_T'] - df['POSITION_T'].min()).dt.total_seconds()
+
+    # Normalisation temporelle
+    df['temps_normalise'] = df['temps_cumulatif'] / df.groupby('TRACK_ID')['temps_cumulatif'].transform('max')
+
+    df['msd'] = df.groupby('temps_normalise')['distance_carre'].transform('mean')
+
+    # Tracé du graphique MSD en fonction du temps normalisé
+    plt.plot(df['temps_normalise'], df['msd'], 'b.')
+    plt.xlabel('Temps normalisé')
+    plt.ylabel('MSD')
+    plt.title('Analyse du Mean Squared Displacement (MSD) avec normalisation temporelle')
+    plt.show()
+
+    # Calcul du coefficient de diffusion
+    temps_normalise = df['temps_normalise'].values
+    msd = df['msd'].values
+    coefficient_diffusion = np.polyfit(temps_normalise, msd, 1)[0] / 4
+
+    print('Coefficient de diffusion estimé:', coefficient_diffusion)
+
+
+
+
+
+
+
+
+
 def Mean2(filename, ax=None):
     df = pd.read_csv(filename, low_memory=False)
     df = df.drop(labels="LABEL", axis=1)
