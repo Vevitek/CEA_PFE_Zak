@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn as sns
+import os
 
 def Read_data(filename):
     csv_f = pd.read_csv(filename, low_memory=False) #, delimiter=';'
@@ -39,7 +41,7 @@ def Rep_same_origin(filename, ax=None):
         plt.axhline(y=0, color='black', linewidth=0.5)
         plt.axvline(x=0, color='black', linewidth=0.5)
 
-def Rep_traj_unchanged(filename, ax=None):
+def Rep_traj_unchanged(filename,pathfile, ax=None):
     csv_f = Read_data(filename)
 
     each_traj = csv_f.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True))
@@ -49,13 +51,27 @@ def Rep_traj_unchanged(filename, ax=None):
         ax.invert_yaxis()
         ax.set_transform(ax.transData + plt.matplotlib.transforms.Affine2D().rotate_deg(180))
 
+    folder_traj = pathfile + r'\particule'
+    os.makedirs(folder_traj, exist_ok=True)
+    os.chdir(folder_traj)
+    max_time = each_traj["POSITION_T"].max()
+
     for i in each_traj["TRACK_ID"].unique():
         # Calculer les déplacements relatifs à la première position
         X_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_X"]
         Y_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_Y"]
+        T_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_T"]
+        name_file = 'particule'+str(int(i))+'.txt'
+        with open(name_file,'w', encoding='utf-8') as fichier:
+            # Écrire les données dans le fichier avec des colonnes distinctes
+            for t, x, y in zip(T_l, X_l, Y_l):
+                fichier.write(f"{t} {x} {y}\n")
 
         # Tracer la trajectoire
         ax.plot(X_l, Y_l)
+
+    return max_time
+
 
 def Distrib_direction_hist(filename, ax=None):
     # Import CSV file containing X and Y positions for each particle
@@ -108,9 +124,6 @@ def Distrib_direction_hist(filename, ax=None):
         ax = fig.add_subplot(111, polar=True)
         ax.set_theta_direction(-1)
 
-    # Set number of bins and bin edges
-    # bin_edges = np.linspace(0, 360, 120 + 1)  # Bin edges in degrees
-
     occurrences, bin_edges = np.histogram(directions, bins=np.linspace(0, 360, 120 + 1))
 
     weights = np.ones_like(directions) * len(directions)
@@ -118,58 +131,54 @@ def Distrib_direction_hist(filename, ax=None):
     # Plot the circular histogram
     bars = ax.hist(np.deg2rad(directions), bins=np.deg2rad(bin_edges), weights=weights, color='steelblue', alpha=0.8)
 
+    max_occ = np.max(occurrences)
     for bar, occurrence, bin_edge in zip(bars[0], occurrences, bin_edges[:-1]):
         height = bar
         angle = np.deg2rad(bin_edge)
-        ax.text(angle, height, occurrence, ha='center', va='bottom', fontsize=14, color='red')
+
+        if np.any(occurrence > 0.3 * max_occ):  # Seuil pour la hauteur à partir duquel afficher le texte
+            ax.text(angle, height, occurrence, ha='center', va='bottom', fontsize=14, color='red')
 
     ax.set_yticklabels([])
 
+def calcul_coefficient_diffusion(filename, nb_iterations):
+    donnees_tracking = Read_data(filename)
+    deplacements_x = np.diff(donnees_tracking['POSITION_X'])
+    deplacements_y = np.diff(donnees_tracking['POSITION_Y'])
+    deplacements_carres = deplacements_x**2 + deplacements_y**2
 
+    msd_estime = []
+    nb_deplacements = len(deplacements_carres)
 
+    duree_totale = donnees_tracking['POSITION_T'].iloc[-1] - donnees_tracking['POSITION_T'].iloc[0]
 
-def Mean_Square_Displacement(filename, deltaT=1, ax=None):
-    df = Read_data(filename)
+    for _ in range(nb_iterations):
+        intervalle_temps = np.random.randint(0, nb_deplacements)
+        temps_cumulatif = donnees_tracking['POSITION_T'].iloc[intervalle_temps] - donnees_tracking['POSITION_T'].iloc[0]
+        temps_normalise = temps_cumulatif / duree_totale
+        if np.isclose(temps_normalise, 0):
+            continue
+        msd_estime.append(np.mean(deplacements_carres[:intervalle_temps]) / temps_normalise)
 
-    each_traj = df.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True))
+    msd_moyen = np.mean(msd_estime)
+    coefficient_diffusion_estime = msd_moyen / 4
 
-    MSD_all = []
-    for i in each_traj["TRACK_ID"].unique():
-        mask = each_traj["TRACK_ID"] == i
-        df_i = each_traj[mask].reset_index(drop=True)
-
-        # Calculer la distance euclidienne entre les positions x et y
-        r = np.sqrt(df_i["POSITION_X"] ** 2 + df_i["POSITION_Y"] ** 2)
-
-        # Calculer la différence de distance entre deux temps consécutifs
-        diff = np.diff(r)
-
-        # Calculer le carré de la différence de distance
-        diff_sq = diff ** 2
-
-        # Calculer le MSD pour chaque temps de retard
-        MSD = []
-        for j in range(1, len(df_i)):
-            msd_j = np.mean(diff_sq[:len(diff_sq) - j])
-            MSD.append(msd_j)
-        MSD_all.append(MSD)
-
-    # Tracer le MSD pour chaque trajectoire
-    fig, ax = plt.subplots()
-    for i in range(len(MSD_all)):
-        ax.plot(range(len(MSD_all[i])), abs(MSD_all[i] - MSD_all[i][0]))
-
-    ax.set_xlabel('Time')
-    ax.set_ylabel('Mean Square Displacement')
-
+    return coefficient_diffusion_estime
 
 
 def Analyse_diff_rate(filename):
     df = Read_data(filename)
 
+    # Filtrer les données pour une seule trajectoire
+    df_trajectoire = df[df['TRACK_ID'] == 2]
+
+    # Tri des données par temps croissant pour chaque trajectoire
+    df['POSITION_T'] = pd.to_datetime(df['POSITION_T'])
+    df.sort_values(['TRACK_ID', 'POSITION_T'], inplace=True)
+
     # Calcul des déplacements
-    df['dx'] = df['POSITION_X'].diff()
-    df['dy'] = df['POSITION_Y'].diff()
+    df['dx'] = df.groupby('TRACK_ID')['POSITION_X'].diff()
+    df['dy'] = df.groupby('TRACK_ID')['POSITION_Y'].diff()
 
     # Calcul de la distance moyenne au carré
     df['distance_carre'] = df['dx'] ** 2 + df['dy'] ** 2
@@ -191,12 +200,16 @@ def Analyse_diff_rate(filename):
 
     print('Coefficient de diffusion estimé:', coefficient_diffusion)
 
-def MSD_diff_rate(filename):
+def MSD_diff_rate(filename,window_size):
     df = Read_data(filename)
 
+    # Tri des données par temps croissant pour chaque trajectoire
+    # df['POSITION_T'] = pd.to_datetime(df['POSITION_T'])
+    df.sort_values(['TRACK_ID', 'POSITION_T'], inplace=True)
+
     # Calcul des déplacements
-    df['dx'] = df['POSITION_X'].diff()
-    df['dy'] = df['POSITION_Y'].diff()
+    df['dx'] = df.groupby('TRACK_ID')['POSITION_X'].diff()
+    df['dy'] = df.groupby('TRACK_ID')['POSITION_Y'].diff()
 
     # Calcul du Mean Squared Displacement (MSD)
     df['distance_carre'] = df['dx'] ** 2 + df['dy'] ** 2
@@ -206,148 +219,44 @@ def MSD_diff_rate(filename):
     # Normalisation temporelle
     df['temps_normalise'] = df['temps_cumulatif'] / df.groupby('TRACK_ID')['temps_cumulatif'].transform('max')
 
-    df['msd'] = df.groupby('temps_normalise')['distance_carre'].transform('mean')
+    # Calcul du MSD moyen pour chaque temps normalisé
+    df['msd_norm_time'] = df.groupby('temps_normalise')['distance_carre'].transform('mean')
 
-    # Tracé du graphique MSD en fonction du temps normalisé
-    plt.plot(df['temps_normalise'], df['msd'], 'b.')
-    plt.xlabel('Temps normalisé')
+    # Calcul de la courbe moyenne de toutes les trajectoires
+    msd_moyen = df.groupby('temps_normalise')['msd_norm_time'].mean()
+
+    # Lissage de la courbe moyenne avec une moyenne mobile
+    msd_moyen_lisse = moving_average(msd_moyen.values, window_size)
+
+    # Obtenir une palette de couleurs pour les trajectoires
+    palette = sns.color_palette('colorblind', len(df['TRACK_ID'].unique()))
+
+    # Tracé des courbes MSD pour chaque trajectoire
+    for i, (_, group) in enumerate(df.groupby('TRACK_ID')):
+        color = palette[i % len(palette)]  # Sélectionne une couleur de la palette
+        plt.plot(group['temps_normalise'], group['msd_norm_time'], '-', alpha=0.15, color=color)
+
+    # Régression linéaire pour estimer la tendance moyenne
+    pente, ordonnee_origine = np.polyfit(df['temps_normalise'], df['msd_norm_time'], 1)
+    tendance_moyenne = pente * df['temps_normalise'] + ordonnee_origine
+    plt.plot(df['temps_normalise'], tendance_moyenne, 'g--', label='Tendance moyenne')
+
+    # Tracé de la courbe moyenne des MSD de toutes les trajectoires
+    plt.plot(msd_moyen.index[window_size-1:], msd_moyen_lisse, 'r-', label='MSD mean (smoothed)')
+    plt.xlabel('Normalized time')
     plt.ylabel('MSD')
-    plt.title('Analyse du Mean Squared Displacement (MSD) avec normalisation temporelle')
-    plt.show()
+    plt.title('Mean Squared Displacement (MSD) analysis with time normalization')
+    plt.legend()
 
     # Calcul du coefficient de diffusion
     temps_normalise = df['temps_normalise'].values
-    msd = df['msd'].values
+    msd = df['msd_norm_time'].values
     coefficient_diffusion = np.polyfit(temps_normalise, msd, 1)[0] / 4
 
     print('Coefficient de diffusion estimé:', coefficient_diffusion)
 
+def moving_average(x, window_size):
+    return np.convolve(x, np.ones(window_size) / window_size, mode='valid')
 
 
 
-
-
-
-
-
-def Mean2(filename, ax=None):
-    df = pd.read_csv(filename, low_memory=False)
-    df = df.drop(labels="LABEL", axis=1)
-    df = df.drop(index=range(3), axis=0)
-    df = df.astype(float)
-
-    df["POSITION_Y"] = -1 * df["POSITION_Y"]
-
-    each_traj = df.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True))
-
-    MSD_list = []
-    for i in each_traj["TRACK_ID"].unique():
-        mask = each_traj["TRACK_ID"] == i
-        df_i = each_traj[mask].reset_index(drop=True)
-
-        diff = df_i[["POSITION_X", "POSITION_Y"]] - df_i.iloc[0][["POSITION_X", "POSITION_Y"]]
-        diff_sq = diff ** 2
-        MSD_list.append(diff_sq.values)
-
-    MSD_array = np.vstack(MSD_list)
-    print(type(MSD_array))
-
-    MSD_means = np.nanmean(MSD_array, axis=0)
-    print(type(MSD_means))
-
-    if ax is None:
-        fig, ax = plt.subplots()
-
-    ax.plot(df["POSITION_T"][:len(MSD_means)], MSD_means)
-    ax.set_xlabel("Time (frames)")
-    ax.set_ylabel("MSD")
-    ax.set_title("Mean Squared Displacement")
-
-def Mean3(filename, ax=None):
-    # Step 1: Read CSV file
-    df = pd.read_csv(filename, low_memory=False)
-
-    # Step 2: Drop useless lines and columns
-
-    df = df.drop(labels="LABEL", axis=1)
-    df = df.drop(index=range(3), axis=0)
-    df = df.astype(float)   #By default, str is the type
-
-    # Step 3: Sort data
-    df = df.sort_values(by=['TRACK_ID', 'POSITION_T'])
-
-    # Step 4: Calculate the differences of position by time
-    df['DX'] = df.groupby('TRACK_ID')['POSITION_X'].diff()
-    df['DY'] = df.groupby('TRACK_ID')['POSITION_Y'].diff()
-
-    # Step 5: Calculate MSD for each particle
-    df['MSD'] = df['DX'] ** 2 + df['DY'] ** 2
-
-    # Step 6: Calculate MSD mean for each time using all trajectories
-    msd_mean = df.groupby('POSITION_T')['MSD'].mean()
-
-    msd_mean_all = df.groupby('POSITION_T')['MSD'].mean()
-
-    # Step 7: Check if the curve is increasing according to brownian motion
-    if not np.all(np.diff(msd_mean.values) >= 0):
-        print('La courbe MSD n\'est pas croissante conformément à un mouvement brownien !')
-
-    if ax is None:
-        fig, ax = plt.subplots()
-    # Step 8: Plot MSD global
-    ax.plot(msd_mean_all.index, msd_mean_all.values, label="All trajectories",linewidth=2.5)
-
-    # Step 9: Calculate MSD for each trajectory
-    msd_mean_traj = df.groupby(['TRACK_ID', 'POSITION_T'])['MSD'].mean().reset_index()
-
-    # Step 10: Plot MSD for each trajectory
-    for traj_id in msd_mean_traj['TRACK_ID'].unique():
-        traj_data = msd_mean_traj[msd_mean_traj['TRACK_ID'] == traj_id]
-        plt.plot(traj_data['POSITION_T'][0:3], traj_data['MSD'][0:3],alpha=0.6)
-
-    ax.set_xlabel('Time T')
-    ax.set_ylabel('Mean Square Displacement (MSD)')
-    ax.legend()
-
-def MSD_GPT():
-    # Set seed for reproducibility
-    np.random.seed(42)
-
-    # Set parameters
-    n_steps = 1000
-    step_size = 1
-    dimension = 2
-
-    # Generate random steps for Brownian motion
-    steps = np.random.normal(scale=step_size, size=(n_steps, dimension))
-
-    # Set initial position
-    start_pos = np.zeros((1, dimension))
-
-    # Calculate positions over time
-    positions = np.concatenate([start_pos, np.cumsum(steps, axis=0)])
-
-    # Calculate the displacement
-    displacement = positions[1:] - start_pos
-
-    # Calculate the squared displacement
-    squared_displacement = np.sum(displacement ** 2, axis=1)
-
-    # Calculate the mean square displacement
-    msd = np.mean(squared_displacement)
-
-    # Plot the positions over time
-    # plt.plot(positions[:, 0], positions[:, 1], alpha=0.5)
-    # plt.xlabel('x')
-    # plt.ylabel('y')
-    # plt.title('2D Brownian Motion')
-    # plt.show()
-
-    # Plot the MSD over time
-    time = np.arange(n_steps - 1)
-    squared_displacement = squared_displacement[:-1]
-    plt.figure()
-    plt.plot(time, squared_displacement)
-    plt.xlabel('Time')
-    plt.ylabel('Squared Displacement')
-    plt.title('Mean Square Displacement = {}'.format(msd))
