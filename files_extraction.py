@@ -5,17 +5,15 @@ import seaborn as sns
 import os
 
 def Read_data(filename):
-    csv_f = pd.read_csv(filename, low_memory=False) #, delimiter=';'
+    csv_f = pd.read_csv(filename, low_memory=False)
     csv_f = csv_f.drop(labels="LABEL", axis=1)
     csv_f = csv_f.drop(index=range(3), axis=0)
     csv_f = csv_f.astype(float)
 
     return csv_f
 
-
 def Rep_same_origin(filename, ax=None):
     csv_f = Read_data(filename)
-
     each_traj = csv_f.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True))
 
     if ax is None:
@@ -23,18 +21,14 @@ def Rep_same_origin(filename, ax=None):
         ax.invert_yaxis()
         ax.set_transform(ax.transData + plt.matplotlib.transforms.Affine2D().rotate_deg(180))
 
-
-
     for i in each_traj["TRACK_ID"].unique():
-        # Calculer les déplacements relatifs à la première position
+        # Calculate displacements relative to the first position
         X_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_X"] - \
               each_traj[each_traj["TRACK_ID"] == i]["POSITION_X"].iloc[0]
         Y_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_Y"] - \
               each_traj[each_traj["TRACK_ID"] == i]["POSITION_Y"].iloc[0]
 
-        # Tracer la trajectoire
-
-
+        # Tracing the trajectory
         ax.plot(X_l, Y_l)
         ax.set_aspect('equal', adjustable='box')
 
@@ -43,7 +37,6 @@ def Rep_same_origin(filename, ax=None):
 
 def Rep_traj_unchanged(filename,pathfile, ax=None):
     csv_f = Read_data(filename)
-
     each_traj = csv_f.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True))
 
     if ax is None:
@@ -57,13 +50,13 @@ def Rep_traj_unchanged(filename,pathfile, ax=None):
     max_time = each_traj["POSITION_T"].max()
 
     for i in each_traj["TRACK_ID"].unique():
-        # Calculer les déplacements relatifs à la première position
+        # Calculate displacements relative to the first position
         X_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_X"]
         Y_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_Y"]
         T_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_T"]
         name_file = 'particule'+str(int(i))+'.txt'
         with open(name_file,'w', encoding='utf-8') as fichier:
-            # Écrire les données dans le fichier avec des colonnes distinctes
+            # Write data to file with separate columns
             for t, x, y in zip(T_l, X_l, Y_l):
                 fichier.write(f"{t} {x} {y}\n")
 
@@ -72,17 +65,15 @@ def Rep_traj_unchanged(filename,pathfile, ax=None):
 
     return max_time
 
-
 def Distrib_direction_hist(filename, ax=None):
     # Import CSV file containing X and Y positions for each particle
     df = Read_data(filename)
-
     each_traj = df.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True))
     directions = []
 
     for i in each_traj["TRACK_ID"].unique():
-        masque_id = each_traj["TRACK_ID"] == i
-        df_particule_i = each_traj[masque_id]
+        mask_id = each_traj["TRACK_ID"] == i
+        df_particule_i = each_traj[mask_id]
 
         dy = df_particule_i["POSITION_Y"].iloc[-1] - df_particule_i["POSITION_Y"].iloc[0]
         dx = df_particule_i["POSITION_X"].iloc[-1] - df_particule_i["POSITION_X"].iloc[0]
@@ -136,25 +127,25 @@ def Distrib_direction_hist(filename, ax=None):
         height = bar
         angle = np.deg2rad(bin_edge)
 
-        if np.any(occurrence > 0.3 * max_occ):  # Seuil pour la hauteur à partir duquel afficher le texte
+        if np.any(occurrence > 0.3 * max_occ):  # Threshold for text display height
             ax.text(angle, height, occurrence, ha='center', va='bottom', fontsize=14, color='red')
 
     ax.set_yticklabels([])
 
 def calcul_coefficient_diffusion(filename, nb_iterations):
-    donnees_tracking = Read_data(filename)
-    deplacements_x = np.diff(donnees_tracking['POSITION_X'])
-    deplacements_y = np.diff(donnees_tracking['POSITION_Y'])
+    data_tracking = Read_data(filename)
+    deplacements_x = np.diff(data_tracking['POSITION_X'])
+    deplacements_y = np.diff(data_tracking['POSITION_Y'])
     deplacements_carres = deplacements_x**2 + deplacements_y**2
 
     msd_estime = []
     nb_deplacements = len(deplacements_carres)
 
-    duree_totale = donnees_tracking['POSITION_T'].iloc[-1] - donnees_tracking['POSITION_T'].iloc[0]
+    duree_totale = data_tracking['POSITION_T'].iloc[-1] - data_tracking['POSITION_T'].iloc[0]
 
     for _ in range(nb_iterations):
         intervalle_temps = np.random.randint(0, nb_deplacements)
-        temps_cumulatif = donnees_tracking['POSITION_T'].iloc[intervalle_temps] - donnees_tracking['POSITION_T'].iloc[0]
+        temps_cumulatif = data_tracking['POSITION_T'].iloc[intervalle_temps] - data_tracking['POSITION_T'].iloc[0]
         temps_normalise = temps_cumulatif / duree_totale
         if np.isclose(temps_normalise, 0):
             continue
