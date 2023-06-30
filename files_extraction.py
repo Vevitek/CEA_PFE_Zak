@@ -12,13 +12,12 @@ def Read_data(filename):
 
     return csv_f
 
-def Rep_same_origin(filename, ax=None):
+def Rep_same_origin(filename, ax=None,x_left=None,x_right=None,y_bottom=None,y_top=None):
     csv_f = Read_data(filename)
     each_traj = csv_f.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True))
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(6, 6))
-        ax.invert_yaxis()
         ax.set_transform(ax.transData + plt.matplotlib.transforms.Affine2D().rotate_deg(180))
 
     for i in each_traj["TRACK_ID"].unique():
@@ -29,13 +28,18 @@ def Rep_same_origin(filename, ax=None):
               each_traj[each_traj["TRACK_ID"] == i]["POSITION_Y"].iloc[0]
 
         # Tracing the trajectory
-        ax.plot(X_l, Y_l)
+        ax.plot(X_l, -Y_l)
+        ax.invert_yaxis()
         ax.set_aspect('equal', adjustable='box')
-
         plt.axhline(y=0, color='black', linewidth=0.5)
         plt.axvline(x=0, color='black', linewidth=0.5)
 
-def Rep_traj_unchanged(filename,pathfile, ax=None):
+    if x_left is not None and x_right is not None:
+        ax.set_xlim(left=x_left, right=x_right)
+    if y_bottom is not None and y_top is not None:
+        ax.set_ylim(bottom=y_bottom, top=y_top)
+
+def Rep_traj_unchanged(filename,pathfile, ax=None,x_left=None,x_right=None,y_bottom=None,y_top=None):
     csv_f = Read_data(filename)
     each_traj = csv_f.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True))
 
@@ -61,7 +65,13 @@ def Rep_traj_unchanged(filename,pathfile, ax=None):
                 fichier.write(f"{t} {x} {y}\n")
 
         # Tracer la trajectoire
+
         ax.plot(X_l, Y_l)
+
+    if x_left is not None and x_right is not None:
+        ax.set_xlim(left=x_left, right=x_right)
+    if y_bottom is not None and y_top is not None:
+        ax.set_ylim(bottom=y_bottom, top=y_top)
 
     return max_time
 

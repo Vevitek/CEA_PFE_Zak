@@ -18,6 +18,7 @@ class MSDtraj:
         self.remove_lasts_pts = remove_lasts_pts
         self.deltat = deltaT
 
+
     def importtraj(self,num,delimiter =' '):
             d = [] # stores data from the text file
             filename = self.dirname + r'\particule' + str(num)+".txt"
