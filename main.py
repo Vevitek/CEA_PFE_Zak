@@ -24,7 +24,7 @@ msd = MSDtraj(pathfile,['t','x','y'],50,0)   # MSDtraj(pathfile, [time, x_positi
 
 msddata, MSDlist, taul = msd.main()
 
-msd.slope_origin(msddata,10)    #adapt the number of points you want to take for linear regression
+msd.slope_origin(msddata,10)    #Second argument is meant to adapt the number of points you want to take for linear regression
 
 plt.show()
 
