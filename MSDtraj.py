@@ -2,45 +2,39 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy import stats
+import os
 
 """ at the end we should get the mean square displacement of the particle trajectories;
 if multiple particles are present then assume the mean of all MSDs
 """
 class MSDtraj:
 
-    def __init__(self,dirname,filenum,coords,timestep,timeCMSD=1000):
+    def __init__(self,dirname,coords,deltaT,remove_lasts_pts=0):
         self.dirname = dirname +'\particule'
-        self.filenum = filenum
-        self.timeCMSD = timeCMSD
+        files = [file for file in os.listdir(dirname +'\particule') if os.path.isfile(os.path.join(dirname +'\particule', file))]
+        self.filenum = len(files)-1
         self.coords = coords
-        self.timestep = timestep
+        self.timestep = 1
+        self.remove_lasts_pts = remove_lasts_pts
+        self.deltat = deltaT
 
-    # importing trajectory
     def importtraj(self,num,delimiter =' '):
-            lencoords = len(self.coords)
             d = [] # stores data from the text file
             filename = self.dirname + r'\particule' + str(num)+".txt"
             with open(filename, 'r', encoding='utf-8') as source:
                 for line in source:
                     if delimiter in line:
                         f = line.split(' ')
-                        if lencoords == 4:  # for 3D case
-                            d.append(list(map(lambda i: float(f[i]),[0,1,2,3])))
-                        elif lencoords == 3:  # for 2D case
-                            d.append(list(map(lambda i: float(f[i]), [0, 1, 2])))
-                        else:  # for 1-D
-                            d.append(map(lambda i: float(f[i]),[0,1]))
+                        d.append(list(map(lambda i: float(f[i]), [0, 1, 2])))
 
             return pd.DataFrame(d, columns=self.coords)
-
-            # return data
 
     # function to compute MSD for one trajectory
     def compute_msd(self,trajectory):
         tau = trajectory['t'].copy()
-        tau = tau[0:self.timeCMSD]
-        tau = pd.to_numeric(tau)  # Counter for consecutive zeros
-        # print(tau)
+        study_time = int(max(tau))
+        tau = tau[0:study_time]
+        tau = pd.to_numeric(tau)
         shifts = np.floor(tau / self.timestep).astype(int)
         msds = []
         msds_std = []
@@ -64,16 +58,20 @@ class MSDtraj:
                         msds_std.append(msd_std)
                     consecutive_zeros = 0
 
+
         msds = pd.DataFrame({'msds': msds, 'tau': tau[:len(msds)], 'msds_std': msds_std})
         return msds, tau[:len(msds)]
 
     def plot_msd(self, MSDlist, msdcomposelist, tau_list):
         plt.figure()
         for msd, tau in zip(MSDlist, tau_list):
-            plt.plot(msd.index, msd.values, alpha=0.2)
-        plt.plot(msdcomposelist, 'r', label='Mean value')
-        plt.xlabel('Time')
-        plt.ylabel('Mean Square Displacement (MSD)')
+            plt.plot(msd.index[:-1-self.remove_lasts_pts]*self.deltat, msd.values[:-1-self.remove_lasts_pts], alpha=0.2)
+
+        x = np.arange(len(msdcomposelist[:-1 - self.remove_lasts_pts])) * self.deltat
+
+        plt.plot(x, msdcomposelist[:-1-self.remove_lasts_pts], 'r', label='Mean value')
+        plt.xlabel('Time (ms)')
+        plt.ylabel('Mean Square Displacement (MSD) in pixels')
         plt.legend()
 
     def slope_origin(self,msddata,nb_values_for_reg):
@@ -95,8 +93,8 @@ class MSDtraj:
 
         # Tracé du graphique avec la droite de régression
         plt.figure()
-        plt.plot(x, msddata, 'o', label='MSD data')
-        plt.plot(x, intercept + slope * x, 'r', label='Regression line')
+        plt.plot(x[:-1-self.remove_lasts_pts], msddata[:-1-self.remove_lasts_pts], 'o', label='MSD data')
+        plt.plot(x[:-1-self.remove_lasts_pts], intercept + slope * x[:-1-self.remove_lasts_pts], 'r', label='Regression line')
         plt.xlabel('Tau')
         plt.ylabel('MSD')
         plt.legend()
@@ -111,6 +109,10 @@ class MSDtraj:
             MSDlist.append(msd['msds'])
             STDlist.append(msd['msds_std'])
             tau_list.append(tau)
+
+        # Remove outliers
+        # MSDlist = remove_outliers(MSDlist)
+
         max_len = max(len(msd) for msd in MSDlist)
         padded_MSDlist = [np.pad(msd, (0, max_len - len(msd)), mode='constant', constant_values=np.nan) for msd in
                           MSDlist]
@@ -119,3 +121,14 @@ class MSDtraj:
         self.plot_msd(MSDlist, msdcomposelist, tau_list)
 
         return msdcomposelist, MSDlist, tau_list
+
+def remove_outliers(data_list, threshold=2):
+    cleaned_list = []
+    for data in data_list:
+        diff = np.diff(data)  # Calculate the differences between consecutive MSD values
+        relative_diff = np.abs(diff / data[:-1])  # Calculate the relative differences
+        mask = relative_diff < threshold  # Mask to filter out the outlier values
+        cleaned_data = data[:-1][mask]  # Keep only the non-outlier values
+        cleaned_list.append(cleaned_data)
+    return cleaned_list
+
