@@ -19,8 +19,8 @@ name_file = r'\prefix of your file' #make sure you keep the "\" before the name 
 # plt.savefig(pathfile+name_file+'_hist.png')
 
 ##---------------------MSD calculation---------------------##
-msd = MSDtraj(pathfile,['t','x','y'],50,5)   # MSDtraj(pathfile, [time, x_position, y_position],
-                                            # timestep in ms, number of last points to remove from graphs)
+msd = MSDtraj(pathfile,['t','x','y'],50,0)   # MSDtraj(pathfile, [time, x_position, y_position],
+                                            # timestep in ms, number of last points to remove from graphs if outliers)
 
 msddata, MSDlist, taul = msd.main()
 
