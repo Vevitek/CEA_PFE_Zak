@@ -70,35 +70,14 @@ class MSDtraj:
 
         x = np.arange(len(msdcomposelist[:-1 - self.remove_lasts_pts])) * self.deltat
 
-        plt.plot(x, msdcomposelist[:-1-self.remove_lasts_pts], 'r', label='Mean value')
+        plt.loglog(x, msdcomposelist[:-1-self.remove_lasts_pts], 'r', label='Mean value')
         plt.xlabel('Time (ms)')
         plt.ylabel('Mean Square Displacement (MSD) in pixels')
         plt.legend()
 
-    def slope_origin(self,msddata,nb_values_for_reg):
-        x = np.arange(len(msddata[1:nb_values_for_reg]))
-        grad = np.polyfit(x, msddata[1:nb_values_for_reg], 1)[0]  # using the first 100 values for computing gradient
-
-        print('the effective diffusion coefficient is : ' + str(
-            grad / (6 * 1e-6)) + ' um^2/sec')  # effective diffusion coefficient `
-
+    def multiple_plots(self,msddata,ax,label):
         x = np.arange(len(msddata))
-        slope, intercept, r_value, p_value, std_err = stats.linregress(x[:nb_values_for_reg],
-                                                                       msddata[:nb_values_for_reg])
-
-        # Affichage des résultats
-        print("Slope of regression line :", slope)
-        print("Constant term of the regression line :", intercept)
-        print("Correlation coefficient :", r_value)
-        print("p-value :", p_value)
-
-        # Tracé du graphique avec la droite de régression
-        plt.figure()
-        plt.plot(x[:-1-self.remove_lasts_pts], msddata[:-1-self.remove_lasts_pts], 'o', label='MSD data')
-        plt.plot(x[:-1-self.remove_lasts_pts], intercept + slope * x[:-1-self.remove_lasts_pts], 'r', label='Regression line')
-        plt.xlabel('Tau')
-        plt.ylabel('MSD')
-        plt.legend()
+        ax.loglog(x[:-1-self.remove_lasts_pts], msddata[:-1-self.remove_lasts_pts],label=label)
 
     ## main import trajectories, calculate composed MSD and STD
     def main(self):
