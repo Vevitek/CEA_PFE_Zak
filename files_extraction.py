@@ -28,11 +28,18 @@ def Rep_same_origin(filename, min_frames=10,x_left=None,x_right=None,y_bottom=No
 
         # Tracing the trajectory
         # Filter trajectories based on the number of frames
-
         if len(X_l) >= min_frames:
             # Tracing the trajectory
             ax.plot(X_l, -Y_l)
+
+            # Inversion de l'axe y
             ax.invert_yaxis()
+
+            # Réglage des limites y pour centrer le graphe
+            y_range = max(Y_l) - min(Y_l)
+            ax.set_ylim(top=max(Y_l) + y_range / 2, bottom=min(Y_l) - y_range / 2)
+
+            # Réglage de l'aspect du graphe et ajout des lignes de référence
             ax.set_aspect('equal', adjustable='box')
             plt.axhline(y=0, color='black', linewidth=0.5)
             plt.axvline(x=0, color='black', linewidth=0.5)
