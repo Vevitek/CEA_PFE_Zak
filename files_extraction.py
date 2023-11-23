@@ -35,31 +35,22 @@ def Rep_same_origin(filename, min_frames=10, x_left=None, x_right=None, y_bottom
             # Tracing the trajectory
             ax.plot(X_l, -Y_l)
 
-            # Inversion de l'axe y
-
-
             # Update global min and max values
             x_min_global = min(x_min_global, min(X_l))
             x_max_global = max(x_max_global, max(X_l))
             y_min_global = min(y_min_global, min(Y_l))
             y_max_global = max(y_max_global, max(Y_l))
 
-
-
             ax.set_aspect('equal', adjustable='box')
 
             plt.axhline(y=0, color='black', linewidth=0.5)
             plt.axvline(x=0, color='black', linewidth=0.5)
 
-    print("Max frame = ", each_traj["POSITION_T"].max())
 
     # Réglage des limites y pour que les trajectoires touchent l'axe y
-    y_range = y_max_global - y_min_global
     ax.set_ylim(top=-y_max_global, bottom=abs(y_min_global))
-    print(y_max_global,y_min_global)
 
     # Réglage des limites x pour que les trajectoires touchent l'axe x
-    x_range = x_max_global - x_min_global
     ax.set_xlim(left=x_min_global, right=x_max_global)
 
     ax.invert_yaxis()
@@ -70,7 +61,7 @@ def Rep_same_origin(filename, min_frames=10, x_left=None, x_right=None, y_bottom
         ax.set_ylim(bottom=float(y_bottom), top=float(y_top))
 
 
-def Rep_traj_unchanged(filename, pathfile, min_frames=10, x_left=None, x_right=None, y_bottom=None, y_top=None):
+def Rep_traj_unchanged(filename, pathfile, min_frames=10):
     csv_f = Read_data(filename)
     each_traj = csv_f.groupby(["TRACK_ID"]).apply(
         lambda x: x.sort_values(["POSITION_T"], ascending=True).reset_index(drop=True))
@@ -82,11 +73,15 @@ def Rep_traj_unchanged(filename, pathfile, min_frames=10, x_left=None, x_right=N
     os.chdir(folder_traj)
     max_time = each_traj["POSITION_T"].max()
 
+    all_times = []
+
     for i in each_traj["TRACK_ID"].unique():
         # Calculate displacements relative to the first position
         X_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_X"]
         Y_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_Y"]
-        T_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_T"]
+        T_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_T"] - each_traj[each_traj["TRACK_ID"] == i]["POSITION_T"].min() + 1
+        all_times.extend(T_l.tolist())
+
         name_file = 'particule' + str(int(i)) + '.txt'
         with open(name_file, 'w', encoding='utf-8') as fichier:
             # Write data to file with separate columns
@@ -98,15 +93,14 @@ def Rep_traj_unchanged(filename, pathfile, min_frames=10, x_left=None, x_right=N
             ax.plot(X_l, -Y_l+abs(each_traj["POSITION_Y"]).max())  # Inversion de Y lors du traçage
 
     ax.set_aspect('equal', adjustable='box')
+    print("Max duration = ", max(all_times))
 
     # Réglage des limites y pour que les trajectoires touchent l'axe y
-    y_range = each_traj["POSITION_Y"].max() - each_traj["POSITION_Y"].min()
     ax.set_ylim(top=each_traj["POSITION_Y"].max(), bottom=each_traj["POSITION_Y"].min())
 
     # Réglage des limites x pour que les trajectoires touchent l'axe x
     x_range = each_traj["POSITION_X"].max() - each_traj["POSITION_X"].min()
-    ax.set_xlim(left=each_traj["POSITION_X"].min(), right=each_traj[
-                                                              "POSITION_X"].min() + x_range)  # Utilisation de x_range pour définir la largeur du tracé
+    ax.set_xlim(left=each_traj["POSITION_X"].min(), right=each_traj["POSITION_X"].min() + x_range)  # Utilisation de x_range pour définir la largeur du tracé
 
     return max_time
 
@@ -201,98 +195,6 @@ def calcul_coefficient_diffusion(filename, nb_iterations):
 
     return coefficient_diffusion_estime
 
-
-def Analyse_diff_rate(filename):
-    df = Read_data(filename)
-
-    # Filtrer les données pour une seule trajectoire
-    df_trajectoire = df[df['TRACK_ID'] == 2]
-
-    # Tri des données par temps croissant pour chaque trajectoire
-    df['POSITION_T'] = pd.to_datetime(df['POSITION_T'])
-    df.sort_values(['TRACK_ID', 'POSITION_T'], inplace=True)
-
-    # Calcul des déplacements
-    df['dx'] = df.groupby('TRACK_ID')['POSITION_X'].diff()
-    df['dy'] = df.groupby('TRACK_ID')['POSITION_Y'].diff()
-
-    # Calcul de la distance moyenne au carré
-    df['distance_carre'] = df['dx'] ** 2 + df['dy'] ** 2
-
-    # Calcul du temps moyen au carré
-    df['POSITION_T'] = pd.to_datetime(df['POSITION_T'])
-    df['temps_carre'] = (df['POSITION_T'] - df['POSITION_T'].min()).dt.total_seconds() ** 2
-
-    # Calcul de la distance moyenne au carré en fonction du temps moyen au carré
-    plt.plot(df['temps_carre'], df['distance_carre'], 'b.')
-    plt.xlabel('Temps moyen au carré')
-    plt.ylabel('Distance moyenne au carré')
-    plt.title('Analyse de mouvement brownien')
-    plt.show()
-
-    # Calcul de la pente (coefficient de diffusion)
-    pente = np.polyfit(df['temps_carre'], df['distance_carre'], 1)[0]
-    coefficient_diffusion = pente / 4
-
-    print('Coefficient de diffusion estimé:', coefficient_diffusion)
-
-def MSD_diff_rate(filename,window_size):
-    df = Read_data(filename)
-
-    # Tri des données par temps croissant pour chaque trajectoire
-    # df['POSITION_T'] = pd.to_datetime(df['POSITION_T'])
-    df.sort_values(['TRACK_ID', 'POSITION_T'], inplace=True)
-
-    # Calcul des déplacements
-    df['dx'] = df.groupby('TRACK_ID')['POSITION_X'].diff()
-    df['dy'] = df.groupby('TRACK_ID')['POSITION_Y'].diff()
-
-    # Calcul du Mean Squared Displacement (MSD)
-    df['distance_carre'] = df['dx'] ** 2 + df['dy'] ** 2
-    df['POSITION_T'] = pd.to_datetime(df['POSITION_T'])
-    df['temps_cumulatif'] = (df['POSITION_T'] - df['POSITION_T'].min()).dt.total_seconds()
-
-    # Normalisation temporelle
-    df['temps_normalise'] = df['temps_cumulatif'] / df.groupby('TRACK_ID')['temps_cumulatif'].transform('max')
-
-    # Calcul du MSD moyen pour chaque temps normalisé
-    df['msd_norm_time'] = df.groupby('temps_normalise')['distance_carre'].transform('mean')
-
-    # Calcul de la courbe moyenne de toutes les trajectoires
-    msd_moyen = df.groupby('temps_normalise')['msd_norm_time'].mean()
-
-    # Lissage de la courbe moyenne avec une moyenne mobile
-    msd_moyen_lisse = moving_average(msd_moyen.values, window_size)
-
-    # Obtenir une palette de couleurs pour les trajectoires
-    palette = sns.color_palette('colorblind', len(df['TRACK_ID'].unique()))
-
-    # Tracé des courbes MSD pour chaque trajectoire
-    for i, (_, group) in enumerate(df.groupby('TRACK_ID')):
-        color = palette[i % len(palette)]  # Sélectionne une couleur de la palette
-        plt.plot(group['temps_normalise'], group['msd_norm_time'], '-', alpha=0.15, color=color)
-
-    # Régression linéaire pour estimer la tendance moyenne
-    pente, ordonnee_origine = np.polyfit(df['temps_normalise'], df['msd_norm_time'], 1)
-    tendance_moyenne = pente * df['temps_normalise'] + ordonnee_origine
-    plt.plot(df['temps_normalise'], tendance_moyenne, 'g--', label='Tendance moyenne')
-
-    # Tracé de la courbe moyenne des MSD de toutes les trajectoires
-    plt.plot(msd_moyen.index[window_size-1:], msd_moyen_lisse, 'r-', label='MSD mean (smoothed)')
-    plt.xlabel('Normalized time')
-    plt.ylabel('MSD')
-    plt.title('Mean Squared Displacement (MSD) analysis with time normalization')
-    plt.legend()
-
-    # Calcul du coefficient de diffusion
-    temps_normalise = df['temps_normalise'].values
-    msd = df['msd_norm_time'].values
-    coefficient_diffusion = np.polyfit(temps_normalise, msd, 1)[0] / 4
-
-    print('Coefficient de diffusion estimé:', coefficient_diffusion)
-
-def moving_average(x, window_size):
-    return np.convolve(x, np.ones(window_size) / window_size, mode='valid')
 
 
 

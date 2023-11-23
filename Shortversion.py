@@ -10,9 +10,10 @@ def process_data_im(filename,pathfile,name_file,min_frames,x_left, x_right, y_bo
     plt.savefig(pathfile + name_file + '_hist.png')
 
 
-def process_data_msd(pathfile,ax,label,deltaT=50):
+def process_data_msd(pathfile,name_file,ax,label,deltaT=50):
     msd = MSDtraj(pathfile, ['t', 'x', 'y'], deltaT, 0)  # MSDtraj(pathfile, [time, x_position, y_position],
     # timestep in ms, number of last points to remove from graphs if outliers)
 
     msddata, MSDlist, taul = msd.main()
+    plt.savefig(pathfile + name_file + '_MeanMSD.png')
     msd.multiple_plots(msddata, ax, label=label)

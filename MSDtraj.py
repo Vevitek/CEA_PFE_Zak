@@ -45,7 +45,7 @@ class MSDtraj:
             shifted_trajectory = trajectory[self.coords].shift(-shiftpos)
             shifted_trajectory = shifted_trajectory.interpolate()  # Fill in missing values by interpolation
 
-            if shifted_trajectory.shape[0] >= 10:  # Filter trajectories with fewer than 10 points
+            if shifted_trajectory.shape[0] >= 5:  # Filter trajectories with fewer than 10 points
                 diffs = shifted_trajectory - trajectory[self.coords]
                 sqdist = np.square(diffs).sum(axis=1)
                 msd = sqdist.mean()
@@ -58,8 +58,6 @@ class MSDtraj:
                         msds.append(msd)
                         msds_std.append(msd_std)
                     consecutive_zeros = 0
-
-
         msds = pd.DataFrame({'msds': msds, 'tau': tau[:len(msds)], 'msds_std': msds_std})
         return msds, tau[:len(msds)]
 
@@ -71,13 +69,13 @@ class MSDtraj:
         x = np.arange(len(msdcomposelist[:-1 - self.remove_lasts_pts])) * self.deltat
 
         plt.loglog(x, msdcomposelist[:-1-self.remove_lasts_pts], 'r', label='Mean value')
-        plt.xlabel('Time (frame)')
+        plt.xlabel('Time (ms)')
         plt.ylabel('Mean Square Displacement (MSD) in pixels')
         plt.legend()
 
     def multiple_plots(self,msddata,ax,label):
         x = np.arange(len(msddata))
-        ax.loglog(x[:-1-self.remove_lasts_pts], msddata[:-1-self.remove_lasts_pts],label=label)
+        ax.loglog(x[:-1-self.remove_lasts_pts]*self.deltat, msddata[:-1-self.remove_lasts_pts],label=label)
 
     ## main import trajectories, calculate composed MSD and STD
     def main(self):
@@ -89,9 +87,6 @@ class MSDtraj:
             MSDlist.append(msd['msds'])
             STDlist.append(msd['msds_std'])
             tau_list.append(tau)
-
-        # Remove outliers
-        # MSDlist = remove_outliers(MSDlist)
 
         max_len = max(len(msd) for msd in MSDlist)
         padded_MSDlist = [np.pad(msd, (0, max_len - len(msd)), mode='constant', constant_values=np.nan) for msd in
