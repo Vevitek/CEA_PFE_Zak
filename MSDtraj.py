@@ -71,7 +71,7 @@ class MSDtraj:
         x = np.arange(len(msdcomposelist[:-1 - self.remove_lasts_pts])) * self.deltat
 
         plt.loglog(x, msdcomposelist[:-1-self.remove_lasts_pts], 'r', label='Mean value')
-        plt.xlabel('Time (ms)')
+        plt.xlabel('Time (frame)')
         plt.ylabel('Mean Square Displacement (MSD) in pixels')
         plt.legend()
 

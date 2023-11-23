@@ -12,12 +12,15 @@ def Read_data(filename):
 
     return csv_f
 
-def Rep_same_origin(filename, min_frames=10,x_left=None,x_right=None,y_bottom=None,y_top=None):
+def Rep_same_origin(filename, min_frames=10, x_left=None, x_right=None, y_bottom=None, y_top=None):
     csv_f = Read_data(filename)
     each_traj = csv_f.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True).reset_index(drop=True) + 1)
 
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.set_transform(ax.transData + plt.matplotlib.transforms.Affine2D().rotate_deg(180))
+
+    x_max_global, y_max_global = float('-inf'), float('-inf')
+    x_min_global, y_min_global = float('inf'), float('inf')
 
     for i in each_traj["TRACK_ID"].unique():
         # Calculate displacements relative to the first position
@@ -33,30 +36,46 @@ def Rep_same_origin(filename, min_frames=10,x_left=None,x_right=None,y_bottom=No
             ax.plot(X_l, -Y_l)
 
             # Inversion de l'axe y
-            ax.invert_yaxis()
 
-            # Réglage des limites y pour centrer le graphe
-            y_range = max(Y_l) - min(Y_l)
-            ax.set_ylim(top=max(Y_l) + y_range / 2, bottom=min(Y_l) - y_range / 2)
 
-            # Réglage de l'aspect du graphe et ajout des lignes de référence
+            # Update global min and max values
+            x_min_global = min(x_min_global, min(X_l))
+            x_max_global = max(x_max_global, max(X_l))
+            y_min_global = min(y_min_global, min(Y_l))
+            y_max_global = max(y_max_global, max(Y_l))
+
+
+
             ax.set_aspect('equal', adjustable='box')
+
             plt.axhline(y=0, color='black', linewidth=0.5)
             plt.axvline(x=0, color='black', linewidth=0.5)
+
     print("Max frame = ", each_traj["POSITION_T"].max())
+
+    # Réglage des limites y pour que les trajectoires touchent l'axe y
+    y_range = y_max_global - y_min_global
+    ax.set_ylim(top=-y_max_global, bottom=abs(y_min_global))
+    print(y_max_global,y_min_global)
+
+    # Réglage des limites x pour que les trajectoires touchent l'axe x
+    x_range = x_max_global - x_min_global
+    ax.set_xlim(left=x_min_global, right=x_max_global)
+
+    ax.invert_yaxis()
 
     if x_left is not None and x_right is not None:
         ax.set_xlim(left=float(x_left), right=float(x_right))
     if y_bottom is not None and y_top is not None:
         ax.set_ylim(bottom=float(y_bottom), top=float(y_top))
 
-def Rep_traj_unchanged(filename, pathfile,min_frames=10,x_left=None,x_right=None,y_bottom=None,y_top=None):
+
+def Rep_traj_unchanged(filename, pathfile, min_frames=10, x_left=None, x_right=None, y_bottom=None, y_top=None):
     csv_f = Read_data(filename)
-    each_traj = csv_f.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True).reset_index(drop=True))
+    each_traj = csv_f.groupby(["TRACK_ID"]).apply(
+        lambda x: x.sort_values(["POSITION_T"], ascending=True).reset_index(drop=True))
 
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.invert_yaxis()
-    ax.set_transform(ax.transData + plt.matplotlib.transforms.Affine2D().rotate_deg(180))
 
     folder_traj = pathfile + r'\particule'
     os.makedirs(folder_traj, exist_ok=True)
@@ -68,20 +87,26 @@ def Rep_traj_unchanged(filename, pathfile,min_frames=10,x_left=None,x_right=None
         X_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_X"]
         Y_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_Y"]
         T_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_T"]
-        name_file = 'particule'+str(int(i))+'.txt'
-        with open(name_file,'w', encoding='utf-8') as fichier:
+        name_file = 'particule' + str(int(i)) + '.txt'
+        with open(name_file, 'w', encoding='utf-8') as fichier:
             # Write data to file with separate columns
             for t, x, y in zip(T_l, X_l, Y_l):
                 fichier.write(f"{t} {x} {y}\n")
 
         # Plot trajectory
         if len(X_l) >= min_frames:
-            ax.plot(X_l, Y_l)
+            ax.plot(X_l, -Y_l+abs(each_traj["POSITION_Y"]).max())  # Inversion de Y lors du traçage
 
-    if x_left is not None and x_right is not None:
-        ax.set_xlim(left=float(x_left), right=float(x_right))
-    if y_bottom is not None and y_top is not None:
-        ax.set_ylim(bottom=float(y_bottom), top=float(y_top))
+    ax.set_aspect('equal', adjustable='box')
+
+    # Réglage des limites y pour que les trajectoires touchent l'axe y
+    y_range = each_traj["POSITION_Y"].max() - each_traj["POSITION_Y"].min()
+    ax.set_ylim(top=each_traj["POSITION_Y"].max(), bottom=each_traj["POSITION_Y"].min())
+
+    # Réglage des limites x pour que les trajectoires touchent l'axe x
+    x_range = each_traj["POSITION_X"].max() - each_traj["POSITION_X"].min()
+    ax.set_xlim(left=each_traj["POSITION_X"].min(), right=each_traj[
+                                                              "POSITION_X"].min() + x_range)  # Utilisation de x_range pour définir la largeur du tracé
 
     return max_time
 
