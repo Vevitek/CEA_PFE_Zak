@@ -9,7 +9,7 @@ if multiple particles are present then assume the mean of all MSDs
 """
 class MSDtraj:
 
-    def __init__(self,dirname,coords,deltaT,remove_lasts_pts=0):
+    def __init__(self,dirname,coords,deltaT,min_num_MSD,remove_lasts_pts=0):
         self.dirname = dirname +'\particule'
         files = [file for file in os.listdir(dirname +'\particule') if os.path.isfile(os.path.join(dirname +'\particule', file))]
         self.filenum = len(files)-1
@@ -17,6 +17,7 @@ class MSDtraj:
         self.timestep = 1
         self.remove_lasts_pts = remove_lasts_pts
         self.deltat = deltaT
+        self.min_num_MSD = min_num_MSD
 
 
     def importtraj(self,num,delimiter =' '):
@@ -45,7 +46,7 @@ class MSDtraj:
             shifted_trajectory = trajectory[self.coords].shift(-shiftpos)
             shifted_trajectory = shifted_trajectory.interpolate()  # Fill in missing values by interpolation
 
-            if shifted_trajectory.shape[0] >= 5:  # Filter trajectories with fewer than 10 points
+            if shifted_trajectory.shape[0] >= self.min_num_MSD:  # Filter trajectories with fewer than 10 points
                 diffs = shifted_trajectory - trajectory[self.coords]
                 sqdist = np.square(diffs).sum(axis=1)
                 msd = sqdist.mean()
