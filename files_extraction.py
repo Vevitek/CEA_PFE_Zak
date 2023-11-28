@@ -18,8 +18,8 @@ def Rep_same_origin(pathfile,name_file,filename,ax, min_frames=10, x_left=None, 
 
     ax.set_transform(ax.transData + plt.matplotlib.transforms.Affine2D().rotate_deg(180))
 
-    x_max_global, y_max_global = float('-inf'), float('-inf')
-    x_min_global, y_min_global = float('inf'), float('inf')
+    x_max_global, y_max_global = float(-30000), float(-30000)
+    x_min_global, y_min_global = float(30000), float(30000)
 
     for i in each_traj["TRACK_ID"].unique():
         # Calculate displacements relative to the first position
@@ -45,6 +45,11 @@ def Rep_same_origin(pathfile,name_file,filename,ax, min_frames=10, x_left=None, 
             ax.axhline(y=0, color='black', linewidth=0.5)
             ax.axvline(x=0, color='black', linewidth=0.5)
 
+    # Check for NaN or Inf before setting axis limits
+    if not np.isnan(y_min_global) and not np.isnan(y_max_global) and not np.isinf(y_min_global) and not np.isinf(
+            y_max_global):
+        # Réglage des limites y pour que les trajectoires touchent l'axe y
+        ax.set_ylim(top=-y_max_global, bottom=abs(y_min_global))
 
     # Réglage des limites y pour que les trajectoires touchent l'axe y
     ax.set_ylim(top=-y_max_global, bottom=abs(y_min_global))
@@ -62,8 +67,8 @@ def Rep_same_origin(pathfile,name_file,filename,ax, min_frames=10, x_left=None, 
     fig2, ax2 = plt.subplots(figsize=(6, 6))
     ax2.set_transform(ax2.transData + plt.matplotlib.transforms.Affine2D().rotate_deg(180))
 
-    x_max_global, y_max_global = float('-inf'), float('-inf')
-    x_min_global, y_min_global = float('inf'), float('inf')
+    # x_max_global, y_max_global = float('-inf'), float('-inf')
+    # x_min_global, y_min_global = float('inf'), float('inf')
 
     for i in each_traj["TRACK_ID"].unique():
         # Calculate displacements relative to the first position
@@ -87,6 +92,7 @@ def Rep_same_origin(pathfile,name_file,filename,ax, min_frames=10, x_left=None, 
             ax2.set_aspect('equal', adjustable='box')
             plt.axhline(y=0, color='black', linewidth=0.5)
             plt.axvline(x=0, color='black', linewidth=0.5)
+
 
     # Réglage des limites y pour que les trajectoires touchent l'axe y
     ax2.set_ylim(top=-y_max_global, bottom=abs(y_min_global))
@@ -120,6 +126,10 @@ def Rep_traj_unchanged(filename, pathfile,name_file,ax, min_frames=10):
 
     fig2, ax2 = plt.subplots(figsize=(6, 6))
 
+    each_traj["TRACK_ID"] = each_traj["TRACK_ID"].rank(method='dense').astype(int)
+
+    each_traj["TRACK_ID"].max()
+
     for i in each_traj["TRACK_ID"].unique():
         # Calculate displacements relative to the first position
         X_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_X"]
@@ -127,7 +137,7 @@ def Rep_traj_unchanged(filename, pathfile,name_file,ax, min_frames=10):
         T_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_T"] - each_traj[each_traj["TRACK_ID"] == i][
             "POSITION_T"].min() + 1
         all_times.extend(T_l.tolist())
-        name_file = 'particule' + str(int(i)) + '.txt'
+        name_file = 'particule' + str(i) + '.txt'
         with open(name_file, 'w', encoding='utf-8') as fichier:
             # Write data to file with separate columns
             for t, x, y in zip(T_l, X_l, Y_l):
@@ -145,19 +155,20 @@ def Rep_traj_unchanged(filename, pathfile,name_file,ax, min_frames=10):
     plt.savefig(pathfile + name_file2 + '_traj_unchanged.png')
     plt.close(fig2)
 
-
+    count_part_file = 0
     for i in each_traj["TRACK_ID"].unique():
+
         # Calculate displacements relative to the first position
         X_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_X"]
         Y_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_Y"]
         T_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_T"] - each_traj[each_traj["TRACK_ID"] == i]["POSITION_T"].min() + 1
         all_times.extend(T_l.tolist())
-
-        name_file = 'particule' + str(int(i)) + '.txt'
-        with open(name_file, 'w', encoding='utf-8') as fichier:
-            # Write data to file with separate columns
-            for t, x, y in zip(T_l, X_l, Y_l):
-                fichier.write(f"{t} {x} {y}\n")
+        # count_part_file += 1
+        # name_file = 'particule' + str(int(i)) + '.txt'
+        # with open(name_file, 'w', encoding='utf-8') as fichier:
+        #     # Write data to file with separate columns
+        #     for t, x, y in zip(T_l, X_l, Y_l):
+        #         fichier.write(f"{t} {x} {y}\n")
 
         # Plot trajectory
         if len(X_l) >= min_frames:

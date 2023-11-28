@@ -33,6 +33,7 @@ class MSDtraj:
 
     # function to compute MSD for one trajectory
     def compute_msd(self,trajectory):
+
         tau = trajectory['t'].copy()
         study_time = int(max(tau))
         tau = tau[0:study_time]
@@ -44,6 +45,7 @@ class MSDtraj:
 
         for i, shiftpos in enumerate(shifts):
             shifted_trajectory = trajectory[self.coords].shift(-shiftpos)
+            # print(shifted_trajectory)
             shifted_trajectory = shifted_trajectory.interpolate()  # Fill in missing values by interpolation
 
             if shifted_trajectory.shape[0] >= self.min_num_MSD:  # Filter trajectories with fewer than 10 points
