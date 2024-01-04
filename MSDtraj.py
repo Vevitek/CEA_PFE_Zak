@@ -36,6 +36,9 @@ class MSDtraj:
 
         tau = trajectory['t'].copy()
         study_time = int(max(tau))
+
+        tau = tau - tau.iloc[0]
+        # print(tau)
         tau = tau[0:study_time]
         tau = pd.to_numeric(tau)
         shifts = np.floor(tau / self.timestep).astype(int)
@@ -45,10 +48,9 @@ class MSDtraj:
 
         for i, shiftpos in enumerate(shifts):
             shifted_trajectory = trajectory[self.coords].shift(-shiftpos)
-            # print(shifted_trajectory)
             shifted_trajectory = shifted_trajectory.interpolate()  # Fill in missing values by interpolation
 
-            if shifted_trajectory.shape[0] >= self.min_num_MSD:  # Filter trajectories with fewer than 10 points
+            if shifted_trajectory.shape[0] >= self.min_num_MSD:  # Filter trajectories with fewer than x points
                 diffs = shifted_trajectory - trajectory[self.coords]
                 sqdist = np.square(diffs).sum(axis=1)
                 msd = sqdist.mean()
@@ -78,7 +80,7 @@ class MSDtraj:
 
     def multiple_plots(self,msddata,ax,label):
         x = np.arange(len(msddata))
-        ax.loglog(x[:-1-self.remove_lasts_pts]*self.deltat, msddata[:-1-self.remove_lasts_pts],label=label)
+        ax.loglog(x[1:-1-self.remove_lasts_pts]*self.deltat, msddata[1:-1-self.remove_lasts_pts],label=label)
 
     ## main import trajectories, calculate composed MSD and STD
     def main(self):
@@ -100,13 +102,13 @@ class MSDtraj:
 
         return msdcomposelist, MSDlist, tau_list
 
-def remove_outliers(data_list, threshold=2):
-    cleaned_list = []
-    for data in data_list:
-        diff = np.diff(data)  # Calculate the differences between consecutive MSD values
-        relative_diff = np.abs(diff / data[:-1])  # Calculate the relative differences
-        mask = relative_diff < threshold  # Mask to filter out the outlier values
-        cleaned_data = data[:-1][mask]  # Keep only the non-outlier values
-        cleaned_list.append(cleaned_data)
-    return cleaned_list
+# def remove_outliers(data_list, threshold=2):
+#     cleaned_list = []
+#     for data in data_list:
+#         diff = np.diff(data)  # Calculate the differences between consecutive MSD values
+#         relative_diff = np.abs(diff / data[:-1])  # Calculate the relative differences
+#         mask = relative_diff < threshold  # Mask to filter out the outlier values
+#         cleaned_data = data[:-1][mask]  # Keep only the non-outlier values
+#         cleaned_list.append(cleaned_data)
+#     return cleaned_list
 

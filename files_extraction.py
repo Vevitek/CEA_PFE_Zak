@@ -67,9 +67,6 @@ def Rep_same_origin(pathfile,name_file,filename,ax, min_frames=10, x_left=None, 
     fig2, ax2 = plt.subplots(figsize=(6, 6))
     ax2.set_transform(ax2.transData + plt.matplotlib.transforms.Affine2D().rotate_deg(180))
 
-    # x_max_global, y_max_global = float('-inf'), float('-inf')
-    # x_min_global, y_min_global = float('inf'), float('inf')
-
     for i in each_traj["TRACK_ID"].unique():
         # Calculate displacements relative to the first position
         X_l = each_traj[each_traj["TRACK_ID"] == i]["POSITION_X"] - \
