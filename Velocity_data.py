@@ -69,6 +69,7 @@ def MEAN_DIRECTIONAL_CHANGE_RATE(filename,pathfile,namefile,forty_x_magn, deltat
     plt.savefig(pathfile + namefile + "_Mean_direct_change")
     plt.close()
 
+
 def combined_func(filename,pathfile,namefile,forty_x_magn, deltat):
     print("mdr")
     Avg_speed(filename,pathfile,namefile,forty_x_magn, deltat)

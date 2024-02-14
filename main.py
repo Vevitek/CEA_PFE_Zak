@@ -34,6 +34,7 @@ min_frames = 3 #shortest length you want to remove (based on timeframes)
 
 #Values of x_left, x_right, y_bottom, y_top have to be changed according to your other files, by default (None) it will
 #optimize the representation for a single file
+
 process_data_im(filename1,pathfile1,name_file1,min_frames,x_left, x_right, y_bottom, y_top)
 process_data_im(filename2,pathfile2,name_file2,min_frames,x_left,x_right,y_bottom,y_top)
 process_data_im(filename3,pathfile3,name_file3,min_frames,x_left,x_right,y_bottom,y_top)
