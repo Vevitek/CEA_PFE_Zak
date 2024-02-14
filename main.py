@@ -34,7 +34,6 @@ min_frames = 3 #shortest length you want to remove (based on timeframes)
 
 #Values of x_left, x_right, y_bottom, y_top have to be changed according to your other files, by default (None) it will
 #optimize the representation for a single file
-
 process_data_im(filename1,pathfile1,name_file1,min_frames,x_left, x_right, y_bottom, y_top)
 process_data_im(filename2,pathfile2,name_file2,min_frames,x_left,x_right,y_bottom,y_top)
 process_data_im(filename3,pathfile3,name_file3,min_frames,x_left,x_right,y_bottom,y_top)
@@ -43,10 +42,28 @@ plt.close('all')
 
 ##---------------------VELOCITY analysis---------------------##
 
+#Leave None for default values then adjust by yourself
+
+bins_avg_speed = None   #Has to be an integer e.g: 10 | 40 | 46
+range_avg_speed = None  #Has to be a tuple e.g: (0,6) | (1 , 2.3)
+
+bins_total_dist = None
+range_total_dist = None
+
+bins_conf_ratio = None
+range_conf_ratio = None
+
+bins_direc_CR = None
+range_direc_CR = None
+
+bins = [bins_avg_speed,bins_total_dist,bins_conf_ratio,bins_direc_CR]
+range = [range_avg_speed,range_total_dist,range_conf_ratio,range_direc_CR]
+
+
 fig2, ax2 = plt.subplots()
-combined_func(vel_data1,pathfile1,name_file1,forty_x_magn, deltat)
-combined_func(vel_data2,pathfile2,name_file2,forty_x_magn, deltat)
-combined_func(vel_data3,pathfile3,name_file3,forty_x_magn, deltat)
+combined_func(vel_data1,pathfile1,name_file1,forty_x_magn, deltat, bins, range)
+combined_func(vel_data2,pathfile2,name_file2,forty_x_magn, deltat, bins, range)
+combined_func(vel_data3,pathfile3,name_file3,forty_x_magn, deltat, bins, range)
 
 
 # ##---------------------MSD calculation---------------------##
