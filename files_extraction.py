@@ -1,7 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 import os
 
 def Read_data(filename):
@@ -172,7 +171,6 @@ def Rep_traj_unchanged(filename, pathfile,name_file,ax, min_frames=10):
             ax.plot(X_l, -Y_l+abs(each_traj["POSITION_Y"]).max())  # Inversion de Y lors du traçage
 
     ax.set_aspect('equal', adjustable='box')
-    print("Max duration = ", max(all_times))
 
     ax.axhline(y=0, color='black', linewidth=0.5)
     ax.axvline(x=0, color='black', linewidth=0.5)

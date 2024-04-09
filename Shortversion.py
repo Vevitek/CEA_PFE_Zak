@@ -3,6 +3,8 @@ from MSDtraj import *
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
+from scipy import stats
+
 def process_data_im(filename,pathfile,name_file,min_frames,x_left, x_right, y_bottom, y_top):
     fig, axes = plt.subplots(1, 3, figsize=(8, 5))
     Rep_traj_unchanged(filename, pathfile,name_file,axes[0], min_frames)

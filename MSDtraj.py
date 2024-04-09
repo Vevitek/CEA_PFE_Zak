@@ -1,9 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy import stats
+
 import os
 
+
+forty_x_magn = 6.15 # px/µm if using 40x, divide by 2 for 20x
 """ at the end we should get the mean square displacement of the particle trajectories;
 if multiple particles are present then assume the mean of all MSDs
 """
@@ -38,7 +40,6 @@ class MSDtraj:
         study_time = int(max(tau))
 
         tau = tau - tau.iloc[0]
-        # print(tau)
         tau = tau[0:study_time]
         tau = pd.to_numeric(tau)
         shifts = np.floor(tau / self.timestep).astype(int)
@@ -69,18 +70,19 @@ class MSDtraj:
     def plot_msd(self, MSDlist, msdcomposelist, tau_list):
         plt.figure()
         for msd, tau in zip(MSDlist, tau_list):
-            plt.plot(msd.index[:-1-self.remove_lasts_pts]*self.deltat, msd.values[:-1-self.remove_lasts_pts], alpha=0.2)
+            plt.plot(msd.index[:-1-self.remove_lasts_pts]*self.deltat/1000, msd.values[:-1-self.remove_lasts_pts] / forty_x_magn
+                     , alpha=0.2)
 
-        x = np.arange(len(msdcomposelist[:-1 - self.remove_lasts_pts])) * self.deltat
+        x = np.arange(len(msdcomposelist[:-1 - self.remove_lasts_pts])) * self.deltat/1000
 
-        plt.loglog(x, msdcomposelist[:-1-self.remove_lasts_pts], 'r', label='Mean value')
-        plt.xlabel('Time (ms)')
-        plt.ylabel('Mean Square Displacement (MSD) in pixels')
+        plt.plot(x, msdcomposelist[:-1-self.remove_lasts_pts] / forty_x_magn, 'r', label='Mean value')
+        plt.xlabel('Time (s)')
+        plt.ylabel('Mean Square Displacement (MSD) in µm²')
         plt.legend()
 
     def multiple_plots(self,msddata,ax,label):
         x = np.arange(len(msddata))
-        ax.loglog(x[1:-1-self.remove_lasts_pts]*self.deltat, msddata[1:-1-self.remove_lasts_pts],label=label)
+        ax.plot(x[1:-1-self.remove_lasts_pts]*self.deltat, msddata[1:-1-self.remove_lasts_pts],label=label)
 
     ## main import trajectories, calculate composed MSD and STD
     def main(self):
