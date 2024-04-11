@@ -4,14 +4,14 @@ import pandas as pd
 
 import os
 
+forty_x_magn = 6.67
 
-forty_x_magn = 6.15 # px/µm if using 40x, divide by 2 for 20x
 """ at the end we should get the mean square displacement of the particle trajectories;
 if multiple particles are present then assume the mean of all MSDs
 """
 class MSDtraj:
 
-    def __init__(self,dirname,coords,deltaT,min_num_MSD,remove_lasts_pts=0):
+    def __init__(self,dirname,coords,deltaT,min_num_MSD,remove_lasts_pts):
         self.dirname = dirname +'\particule'
         files = [file for file in os.listdir(dirname +'\particule') if os.path.isfile(os.path.join(dirname +'\particule', file))]
         self.filenum = len(files)-1
@@ -52,9 +52,9 @@ class MSDtraj:
             shifted_trajectory = shifted_trajectory.interpolate()  # Fill in missing values by interpolation
 
             if shifted_trajectory.shape[0] >= self.min_num_MSD:  # Filter trajectories with fewer than x points
-                diffs = shifted_trajectory - trajectory[self.coords]
+                diffs = (shifted_trajectory - trajectory[self.coords])/ forty_x_magn
                 sqdist = np.square(diffs).sum(axis=1)
-                msd = sqdist.mean()
+                msd = sqdist.mean()/ len(diffs)
                 msd_std = sqdist.std()
 
                 if msd == 0:  # Vérifier si la valeur MSD est nulle
@@ -70,19 +70,19 @@ class MSDtraj:
     def plot_msd(self, MSDlist, msdcomposelist, tau_list):
         plt.figure()
         for msd, tau in zip(MSDlist, tau_list):
-            plt.plot(msd.index[:-1-self.remove_lasts_pts]*self.deltat/1000, msd.values[:-1-self.remove_lasts_pts] / forty_x_magn
+            plt.plot(msd.index[:-1-self.remove_lasts_pts]*self.deltat/1000, msd.values[:-1-self.remove_lasts_pts]
                      , alpha=0.2)
 
-        x = np.arange(len(msdcomposelist[:-1 - self.remove_lasts_pts])) * self.deltat/1000
+        x = np.arange(len(msdcomposelist[:-1 - self.remove_lasts_pts])) * (self.deltat/1000)
 
-        plt.plot(x, msdcomposelist[:-1-self.remove_lasts_pts] / forty_x_magn, 'r', label='Mean value')
+        plt.plot(x, msdcomposelist[:-1-self.remove_lasts_pts], 'r', label='Mean value')
         plt.xlabel('Time (s)')
         plt.ylabel('Mean Square Displacement (MSD) in µm²')
         plt.legend()
 
     def multiple_plots(self,msddata,ax,label):
         x = np.arange(len(msddata))
-        ax.plot(x[1:-1-self.remove_lasts_pts]*self.deltat, msddata[1:-1-self.remove_lasts_pts],label=label)
+        ax.plot(x[1:-1-self.remove_lasts_pts]*self.deltat/1000, msddata[1:-1-self.remove_lasts_pts],label=label)
 
     ## main import trajectories, calculate composed MSD and STD
     def main(self):

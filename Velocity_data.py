@@ -24,7 +24,7 @@ def Avg_speed(filename,pathfile,namefile,forty_x_magn, deltat, bins=None, range=
 
 def Total_dist_traveled(filename,pathfile,namefile,forty_x_magn, deltat, bins=None, range=None):
     vel_data = Read_data(filename)
-    vel_data["TOTAL_DISTANCE_TRAVELED"] = vel_data["TOTAL_DISTANCE_TRAVELED"] * forty_x_magn / deltat
+    vel_data["TOTAL_DISTANCE_TRAVELED"] = vel_data["TOTAL_DISTANCE_TRAVELED"]  /  (forty_x_magn*deltat)
     vel_data = vel_data.sort_values(["TOTAL_DISTANCE_TRAVELED"], ascending=True).reset_index(drop=True)
 
     fig2, ax2 = plt.subplots()
@@ -66,7 +66,7 @@ def conf_ratio(filename,pathfile,namefile, bins=None, range=None):
 def MEAN_DIRECTIONAL_CHANGE_RATE(filename,pathfile,namefile,forty_x_magn, deltat, bins=None, range=None):
     vel_data = Read_data(filename)
 
-    vel_data["MEAN_DIRECTIONAL_CHANGE_RATE"] = vel_data["MEAN_DIRECTIONAL_CHANGE_RATE"] * forty_x_magn / deltat
+    vel_data["MEAN_DIRECTIONAL_CHANGE_RATE"] = vel_data["MEAN_DIRECTIONAL_CHANGE_RATE"]  / (deltat* forty_x_magn)
     vel_data = vel_data.sort_values(["MEAN_DIRECTIONAL_CHANGE_RATE"], ascending=True).reset_index(drop=True)
 
     fig2, ax2 = plt.subplots()
