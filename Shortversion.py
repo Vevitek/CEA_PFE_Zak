@@ -19,8 +19,8 @@ def process_data_im(filename,pathfile,name_file,min_frames,x_left, x_right, y_bo
     plt.tight_layout() # Ajuster la mise en page
 
 
-def process_data_msd(pathfile,name_file,ax,label,min_num_MSD,reg_value,deltat,*remove_lasts_pts):
-    msd = MSDtraj(pathfile, ['t', 'x', 'y'], deltat,min_num_MSD, remove_lasts_pts[0])  # MSDtraj(pathfile, [time, x_position, y_position],
+def process_data_msd(pathfile,name_file,ax,label,min_num_MSD,reg_value,deltat,*remove_last_pts):
+    msd = MSDtraj(pathfile, ['t', 'x', 'y'], deltat,min_num_MSD, remove_last_pts[0])  # MSDtraj(pathfile, [time, x_position, y_position],
     # timestep in ms, number of last points to remove from graphs if outliers)
 
     msddata, MSDlist, taul = msd.main()
@@ -72,7 +72,7 @@ def process_data_msd(pathfile,name_file,ax,label,min_num_MSD,reg_value,deltat,*r
     D = kb*T / (0.5*10**(-6)*np.pi*µ*6)
 
     print("Estimated radius", name_file[1:]," :", R*10**(9) ,"nm")
-    print("Expected diffusive coefficient : ", D*10**(12), "µm²/s","\n")
+    print("Expected diffusive coefficient for 500nm : ", D*10**(12), "µm²/s","\n")
 
     return msddata, intercept, slope, x
 
@@ -81,16 +81,13 @@ def MSD_superimposition(msdcomposelists,pathfile,intercepts,slopes, deltat=1):
     fig2, ax2 = plt.subplots()
     for i, (msdcomposelist, intercept, slope) in enumerate(zip(msdcomposelists, intercepts, slopes)):
         x = np.arange(len(msdcomposelist))*deltat/1000
-        ax2.plot(x, msdcomposelist ,label=f'Curve {i+1}')
-        ax2.plot(x, intercept + slope * x, 'r', label=f'Reg{i+1}')
-
-
-
+        ax2.plot(x, msdcomposelist, marker='+', linestyle='' ,label=f'Curve {i+1}')
+        # ax2.plot(x, intercept + slope * x, 'r', label=f'Reg{i+1}')
 
     ax2.set_title("MSD Comparison")
     ax2.set_xlabel("Time (s)")
     ax2.set_ylabel("MSD  (µm²)")
     ax2.legend()
-
+    plt.show()
     plt.savefig(os.path.dirname(pathfile) + r"\C_superimposition")
 

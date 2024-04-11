@@ -11,13 +11,13 @@ if multiple particles are present then assume the mean of all MSDs
 """
 class MSDtraj:
 
-    def __init__(self,dirname,coords,deltaT,min_num_MSD,remove_lasts_pts):
+    def __init__(self,dirname,coords,deltaT,min_num_MSD,nb_pts_msd=0):
         self.dirname = dirname +'\particule'
         files = [file for file in os.listdir(dirname +'\particule') if os.path.isfile(os.path.join(dirname +'\particule', file))]
         self.filenum = len(files)-1
         self.coords = coords
         self.timestep = 1
-        self.remove_lasts_pts = remove_lasts_pts
+        self.nb_pts_msd = nb_pts_msd
         self.deltat = deltaT
         self.min_num_MSD = min_num_MSD
 
@@ -42,7 +42,7 @@ class MSDtraj:
         tau = tau - tau.iloc[0]
         tau = tau[0:study_time]
         tau = pd.to_numeric(tau)
-        shifts = np.floor(tau / self.timestep).astype(int)
+        shifts = np.floor(tau[0:self.nb_pts_msd] / self.timestep).astype(int)
         msds = []
         msds_std = []
         consecutive_zeros = 0  # Counter for consecutive zeros
@@ -64,25 +64,35 @@ class MSDtraj:
                         msds.append(msd)
                         msds_std.append(msd_std)
                     consecutive_zeros = 0
+
         msds = pd.DataFrame({'msds': msds, 'tau': tau[:len(msds)], 'msds_std': msds_std})
         return msds, tau[:len(msds)]
 
     def plot_msd(self, MSDlist, msdcomposelist, tau_list):
         plt.figure()
         for msd, tau in zip(MSDlist, tau_list):
-            plt.plot(msd.index[:-1-self.remove_lasts_pts]*self.deltat/1000, msd.values[:-1-self.remove_lasts_pts]
+            plt.plot(msd.index*self.deltat/1000, msd.values
                      , alpha=0.2)
 
-        x = np.arange(len(msdcomposelist[:-1 - self.remove_lasts_pts])) * (self.deltat/1000)
+        x = np.arange(len(msdcomposelist)) * (self.deltat/1000)
 
-        plt.plot(x, msdcomposelist[:-1-self.remove_lasts_pts], 'r', label='Mean value')
+        plt.plot(x, msdcomposelist, 'r', label='Mean value')
         plt.xlabel('Time (s)')
         plt.ylabel('Mean Square Displacement (MSD) in µm²')
         plt.legend()
+        print("Mean MSD value = ",np.mean(msdcomposelist))
+
+        index_1s = round(1 / (self.deltat / 1000))
+        if len(msdcomposelist) > index_1s:
+            # Getting the MSD value at t=1s
+            msd_1s = msdcomposelist[index_1s]
+            print("MSD(1s) = ", msd_1s)
+        else:
+            print("Not enough values to compute MSD at t=1s")
 
     def multiple_plots(self,msddata,ax,label):
         x = np.arange(len(msddata))
-        ax.plot(x[1:-1-self.remove_lasts_pts]*self.deltat/1000, msddata[1:-1-self.remove_lasts_pts],label=label)
+        ax.plot(x*self.deltat/1000, msddata,label=label)
 
     ## main import trajectories, calculate composed MSD and STD
     def main(self):
@@ -104,13 +114,4 @@ class MSDtraj:
 
         return msdcomposelist, MSDlist, tau_list
 
-# def remove_outliers(data_list, threshold=2):
-#     cleaned_list = []
-#     for data in data_list:
-#         diff = np.diff(data)  # Calculate the differences between consecutive MSD values
-#         relative_diff = np.abs(diff / data[:-1])  # Calculate the relative differences
-#         mask = relative_diff < threshold  # Mask to filter out the outlier values
-#         cleaned_data = data[:-1][mask]  # Keep only the non-outlier values
-#         cleaned_list.append(cleaned_data)
-#     return cleaned_list
 
