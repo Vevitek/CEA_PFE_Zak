@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+forty_x_magn = 6.67
 def Read_data(filename):
     csv_f = pd.read_csv(filename, low_memory=False)
     csv_f = csv_f.drop(labels="LABEL", axis=1)
@@ -267,6 +268,45 @@ def Distrib_direction_hist(pathfile,name_file,filename,fig):
     plt.savefig(pathfile + name_file + '_hist.png')
     plt.close(fig2)
 
+def One_Dim_mvt(filename,pathfile, name_file):
+    df = Read_data(filename)
+    each_traj = df.groupby(["TRACK_ID"]).apply(lambda x: x.sort_values(["POSITION_T"], ascending=True))
+    directions = []
+    movements = []
+    for i in each_traj["TRACK_ID"].unique():
+        mask_id = each_traj["TRACK_ID"] == i
+        df_particule_i = each_traj[mask_id]
+
+        dy = (df_particule_i["POSITION_Y"].iloc[-1] - df_particule_i["POSITION_Y"].iloc[0])/ forty_x_magn
+        dx = (df_particule_i["POSITION_X"].iloc[-1] - df_particule_i["POSITION_X"].iloc[0])// forty_x_magn
+
+        direction = np.rad2deg(np.arctan2(dy, dx))
+
+        if direction < 0:
+            direction += float(360)
+        # Calcul du déplacement unidimensionnel
+        displacement = np.sqrt(dx ** 2 + dy ** 2)
+
+        # Détermine si le déplacement est positif, négatif ou nul
+        if 180 > direction > 0:
+            displacement = abs(displacement)
+        elif 360> direction > 180:
+            displacement = -abs(displacement)
+        else:
+            direction_label = "No movement"
+        movements.append(displacement)
+
+    # Affichage de l'histogramme
+    fig,ax = plt.subplots()
+
+    # directions = [movement[1] for movement in movements]
+    ax.hist(movements, bins=20, color='skyblue', edgecolor='black')
+    ax.set_title('Distribution of displacements')
+    ax.set_xlabel('Displacement (µm)')
+    ax.set_ylabel('Frequency')
+    plt.savefig(pathfile + name_file + '_displacements.png')
+
+    return movements
 def calcul_coefficient_diffusion(filename, nb_iterations):
     data_tracking = Read_data(filename)
     deplacements_x = np.diff(data_tracking['POSITION_X'])

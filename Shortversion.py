@@ -15,6 +15,7 @@ def process_data_im(filename,pathfile,name_file,min_frames,x_left, x_right, y_bo
     Rep_traj_unchanged(filename, pathfile,name_file,axes[0], min_frames)
     Rep_same_origin(pathfile,name_file,filename,axes[1], min_frames, x_left, x_right, y_bottom, y_top)
     Distrib_direction_hist(pathfile,name_file,filename,fig)
+    One_Dim_mvt(filename, pathfile, name_file)
 
     plt.tight_layout() # Ajuster la mise en page
 
@@ -89,7 +90,7 @@ def MSD_superimposition(msdcomposelists,pathfile,intercepts,slopes,labels, delta
                 ax2.plot(x[break_index],msdcomposelist[k],marker= 'o')
                 break
 
-        smoothed_msdcomposelist = savgol_filter(msdcomposelist[:break_index], window_length=40, polyorder=2)
+        smoothed_msdcomposelist = savgol_filter(msdcomposelist[:break_index], window_length=60, polyorder=2)
         msd_1s, ind_max = evaluer_fonction_a_partir_de_tableaux(x[:break_index], smoothed_msdcomposelist, 1)
         print('\nMSD(',ind_max*deltat/1000 ,'s) = ',msd_1s, 'for ',labels[i])
         ax2.plot(x[:break_index], smoothed_msdcomposelist, label= labels[i])

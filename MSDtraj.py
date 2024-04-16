@@ -123,3 +123,4 @@ def evaluer_fonction_a_partir_de_tableaux(tableau_x, tableau_y, x):
     y = tableau_y[indice_plus_proche]
 
     return y , indice_plus_proche
+
