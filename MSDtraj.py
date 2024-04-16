@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.signal import savgol_filter
 
 import os
 
@@ -21,7 +22,14 @@ class MSDtraj:
         self.deltat = deltaT
         self.min_num_MSD = min_num_MSD
 
+    def evaluer_fonction_a_partir_de_listes(self,liste_x, liste_y, x):
+        # Recherche de l'indice de x dans la liste_x
+        indice = liste_x.index(x)
 
+        # Récupération de la valeur y correspondante
+        y = liste_y[indice]
+
+        return y
     def importtraj(self,num,delimiter =' '):
             d = [] # stores data from the text file
             filename = self.dirname + r'\particule' + str(num)+".txt"
@@ -82,14 +90,6 @@ class MSDtraj:
         plt.legend()
         print("Mean MSD value = ",np.mean(msdcomposelist))
 
-        index_1s = round(1 / (self.deltat / 1000))
-        if len(msdcomposelist) > index_1s:
-            # Getting the MSD value at t=1s
-            msd_1s = msdcomposelist[index_1s]
-            print("MSD(1s) = ", msd_1s)
-        else:
-            print("Not enough values to compute MSD at t=1s")
-
     def multiple_plots(self,msddata,ax,label):
         x = np.arange(len(msddata))
         ax.plot(x*self.deltat/1000, msddata,label=label)
@@ -115,3 +115,11 @@ class MSDtraj:
         return msdcomposelist, MSDlist, tau_list
 
 
+def evaluer_fonction_a_partir_de_tableaux(tableau_x, tableau_y, x):
+    # Trouver l'indice de la valeur la plus proche de x dans tableau_x
+    indice_plus_proche = np.abs(tableau_x - x).argmin()
+
+    # Récupérer la valeur y correspondante
+    y = tableau_y[indice_plus_proche]
+
+    return y , indice_plus_proche
