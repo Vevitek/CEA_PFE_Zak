@@ -87,7 +87,7 @@ def MSD_superimposition(msdcomposelists,pathfile,intercepts,slopes,labels, delta
         for k in range(int(len(msdcomposelist)/4), len(msdcomposelist)):
             if abs(msdcomposelist[k-1] - msdcomposelist[k]) / max(msdcomposelist[k-1], msdcomposelist[k]) > threshold: #and abs(msdcomposelist[k-2] - msdcomposelist[k-1]) / max(msdcomposelist[k-2], msdcomposelist[k-1]) > threshold:
                 break_index = k
-                ax2.plot(x[break_index],msdcomposelist[k],marker= 'o')
+                # ax2.plot(x[break_index],msdcomposelist[k],marker= 'o')
                 break
 
         smoothed_msdcomposelist = savgol_filter(msdcomposelist[:break_index], window_length=60, polyorder=2)
@@ -124,8 +124,59 @@ def MSD_superimposition(msdcomposelists,pathfile,intercepts,slopes,labels, delta
     ax2.set_xlabel("Time (s)")
     ax2.set_ylabel("MSD  (µm²)")
     ax2.legend()
-    ax2.figure.show()
-    plt.savefig(os.path.dirname(pathfile) + r"\C_superimposition")
+    plt.savefig(os.path.dirname(pathfile) + r"\MSD_smooth_break")
+    plt.close()
+
+    fig, ax = plt.subplots()
+    for i, (msdcomposelist, intercept, slope) in enumerate(zip(msdcomposelists, intercepts, slopes)):
+        x = np.arange(len(msdcomposelist)) * deltat / 1000
+        plt.plot(x, msdcomposelist, label=labels[i])
+
+    ax.set_title("MSD Comparison")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("MSD  (µm²)")
+    ax.legend()
+    plt.savefig(os.path.dirname(pathfile)+ r"\MSD_Raw_data")
+    plt.close()
+
+    fig, ax = plt.subplots()
+    for i, (msdcomposelist, intercept, slope) in enumerate(zip(msdcomposelists, intercepts, slopes)):
+        x = np.arange(len(msdcomposelist)) * deltat / 1000
+        plt.plot(x, msdcomposelist,marker='+',linestyle='', label=labels[i])
+
+    ax.set_title("MSD Comparison")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("MSD  (µm²)")
+    ax.legend()
+    plt.savefig(os.path.dirname(pathfile)+ r"\MSD_Raw_data_cross")
+    plt.close()
+
+    fig, ax = plt.subplots()
+    for i, (msdcomposelist, intercept, slope) in enumerate(zip(msdcomposelists, intercepts, slopes)):
+        x = np.arange(len(msdcomposelist)) * deltat / 1000
+        plt.plot(x, msdcomposelist,marker='+',linestyle='', label=labels[i])
+
+        threshold = 0.2  # À ajuster en fonction de vos données
+        break_index = len(msdcomposelist)
+        # Détection des sauts brusques
+        for k in range(int(len(msdcomposelist) / 4), len(msdcomposelist)):
+            if abs(msdcomposelist[k - 1] - msdcomposelist[k]) / max(msdcomposelist[k - 1], msdcomposelist[
+                k]) > threshold:  # and abs(msdcomposelist[k-2] - msdcomposelist[k-1]) / max(msdcomposelist[k-2], msdcomposelist[k-1]) > threshold:
+                break_index = k
+                # ax2.plot(x[break_index], msdcomposelist[k], marker='o')
+                break
+
+        smoothed_msdcomposelist = savgol_filter(msdcomposelist[:break_index], window_length=60, polyorder=2)
+        plt.plot(x[:break_index], smoothed_msdcomposelist, label=labels[i])
+
+
+    ax.set_title("MSD Comparison")
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("MSD  (µm²)")
+    ax.legend()
+    plt.savefig(os.path.dirname(pathfile)+ r"\MSD_Raw_&_smooth")
+    plt.close()
+
 
     return smoothed_msdcomposelist, intercept, slope, x
 

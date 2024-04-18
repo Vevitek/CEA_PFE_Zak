@@ -4,9 +4,9 @@ forty_x_magn = 6.67 # px/µm if using 40x, divide by 2 for 20x
 from Shortversion import *
 from Velocity_data import *
 
-filename1 = r"C:\Users\za274317\Downloads\For Zak\jp\0s_jp.csv" #exact location of your 1st file, for example r'E:\...\my_file1.csv'
-filename2 = r"C:\Users\za274317\Downloads\For Zak\jp\final-10s_jp.csv"#exact location of your  2nd file, for example r'E:\...\my_file2.csv' and so on
-filename3 = r"C:\Users\za274317\Downloads\For Zak\jp\10s_jp.csv"
+filename1 = r"C:\Users\za274317\Downloads\For Zak\snp\0s_snp.csv" #exact location of your 1st file, for example r'E:\...\my_file1.csv'
+filename2 = r"C:\Users\za274317\Downloads\For Zak\snp\5s_snp.csv"#exact location of your  2nd file, for example r'E:\...\my_file2.csv' and so on
+filename3 = r"C:\Users\za274317\Downloads\For Zak\snp\10s_snp.csv"
 # filename4 = r"C:\Users\za274317\Downloads\For Zak\jp\final-10s_jp.csv"
 
 vel_data1 = r"N:\..." #exact location of your velocity data file, for example r'E:\...\my_velocityfile1.csv'
