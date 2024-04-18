@@ -1,6 +1,9 @@
 deltat = 90 #time in ms between 2 frames
 forty_x_magn = 6.67 # px/µm if using 40x, divide by 2 for 20x
 
+
+# For MSD limits modification go in files_extraction.py and change first global parameters defined as None
+
 from Shortversion import *
 from Velocity_data import *
 
@@ -70,7 +73,7 @@ range = [range_avg_speed,range_total_dist,range_conf_ratio,range_direc_CR]
 
 min_num_MSD = 40 #only trajectories with more than min_num_MSD will be taken into account for MSD calculation
 reg_value = 7 #number of values used for linear regression and diffusion coefficient
-max_el_msd = 200
+max_el_msd = None
 
 
 label1 = "0pc"

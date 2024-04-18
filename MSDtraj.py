@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from files_extraction import min_msd_x_rep, max_msd_x_rep, min_msd_y_rep, max_msd_y_rep
 from scipy.signal import savgol_filter
 
 import os
@@ -83,8 +84,14 @@ class MSDtraj:
                      , alpha=0.2)
 
         x = np.arange(len(msdcomposelist)) * (self.deltat/1000)
+        smoothed_msdcomposelist = savgol_filter(msdcomposelist, window_length=60, polyorder=2)
+        plt.plot(x, smoothed_msdcomposelist, 'r', label='Mean value')
 
-        plt.plot(x, msdcomposelist, 'r', label='Mean value')
+        if min_msd_x_rep is not None and max_msd_x_rep is not None:
+            plt.xlim([min_msd_x_rep, max_msd_x_rep])
+
+        if min_msd_y_rep is not None and max_msd_y_rep is not None:
+            plt.ylim([min_msd_y_rep, max_msd_y_rep])
         plt.xlabel('Time (s)')
         plt.ylabel('Mean Square Displacement (MSD) in µm²')
         plt.legend()

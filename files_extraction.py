@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+global min_msd_x_rep, max_msd_x_rep, min_msd_y_rep, max_msd_y_rep
+
+min_msd_x_rep = None
+max_msd_x_rep = None
+min_msd_y_rep = None
+max_msd_y_rep = None
+
 forty_x_magn = 6.67
 def Read_data(filename):
     csv_f = pd.read_csv(filename, low_memory=False)
